@@ -1,0 +1,30 @@
+name: 搬瓦工库存定时监控
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '*/20 * * * *' # 每 20 分钟全自动运行一次检测
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 检出源码
+      uses: actions/checkout@v3
+
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v4
+      with:
+        python-packages: 'requests'
+
+    - name: 执行库存爬虫脚本
+      run: python check_stock.py
+
+    - name: 提交并推送到 Cloudflare
+      run: |
+        git config --global user.name "StockBot"
+        git config --global user.email "bot@github.com"
+        git add data.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 自动更新库存数据 [$(date '+%Y-%m-%d %H:%M:%S')]" && git push)
